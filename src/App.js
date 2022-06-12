@@ -1,26 +1,48 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useEffect, useState } from 'react';
+import ForceGraph2D from 'react-force-graph-2d';
 import './App.css';
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+	// const [scope, setScope] = useState(0);
+	const [teste, setTeste] = useState(false);
+
+	function genRandomTree(N = 10, reverse = false) {
+		return {
+			nodes: [...Array(N).keys()].map(i => ({ id: i })),
+			links: [...Array(N).keys()]
+				.filter(id => id)
+				.map(id => ({
+					[reverse ? 'target' : 'source']: id,
+					[reverse ? 'source' : 'target']: Math.round(Math.random() * (id - 1))
+				}))
+		};
+	}
+
+	useEffect(() => {
+		if (!teste) setTeste(true);
+	}, [teste])
+
+	return (
+		<div className="App">
+			<header className="App-header">
+				<ForceGraph2D
+					graphData={genRandomTree()}
+					linkWidth={5}
+					linkColor='#ffffff'
+				/>
+			</header>
+		</div>
+	)
+
+
+	// else return (
+	// 	<div className="App">
+	// 		<header className="App-header">
+	// 			<button onClick={() => setScope(1)} > New force graph </button>
+	// 			<button> Upload json </button>
+	// 		</header>
+	// 	</div>
+	// );
 }
 
 export default App;
