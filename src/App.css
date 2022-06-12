@@ -24,6 +24,14 @@
   color: white;
 }
 
+.App-header form {
+  font-size: calc(5px + 1vmin);
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+  justify-content: space-around;
+}
+
 .App-link {
   color: #61dafb;
 }
