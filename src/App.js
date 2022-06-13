@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { ToastContainer, toast } from "react-toastify";
+import Options from './ForceGraphOptions';
+import NodeForm from './NodeForm';
 import './App.css';
 
 function App() {
@@ -13,6 +14,12 @@ function App() {
 	const [moving, setMoving] = useState(false);
 	const [nodeDrag, setNodeDrag] = useState(false);
 	const [showLabels, setShowLabels] = useState(false);
+
+	const [showModal, setShowModal] = useState(false);
+
+	const [nodeName, setNodeName] = useState('');
+	const [nodeValue, setNodeValue] = useState('');
+	const [nodeColor, setNodeColor] = useState('');
 
 	function genRandomTree(N = 10, reverse = false) {
 		return {
@@ -50,47 +57,27 @@ function App() {
 		setScope(1);
 	}
 
-	function openNewNodeForm() {
-		toast(<NewNodeForm />, { autoClose: false, closeOnClick: false })
+	const addNode = () => {
+		const node = {
+			id: graphData?.nodes?.length,
+			val: nodeValue || 1,
+			name: nodeName, color: nodeColor,
+			fx: 10,
+			fy: 10,
+		};
+		const newGraphData = { ...graphData };
+		const nodesList = [...newGraphData.nodes] || [];
+		nodesList.push(node);
+		newGraphData.nodes = nodesList;
+
+		setGraphData(newGraphData);
+		setNodeName('');
+		setNodeValue('');
+		setNodeColor('');
+
+		setShowModal(false);
 	}
 
-	const NewNodeForm = ({ closeToast }) => {
-		return <section>
-			<h4> New node </h4>
-			<form>
-				<input placeholder='name' type='text' />
-				<input placeholder='value' type='number' />
-				<br />
-				<label>Color:</label> <input placeholder='color' type='color' />
-				<br />
-				<button type='button' > Salve </button>
-				<button onClick={closeToast} type='button'> Cancel </button>
-			</form>
-		</section>
-	}
-
-	const Options = () => {
-		return <section>
-			<h4> Options: </h4>
-			<form>
-				<button onClick={openNewNodeForm} type='button' > New node </button>
-				<span>
-					<input type='checkbox' onChange={() => setShowLabels(!showLabels)} /> <label> Show labels </label>
-				</span>
-				<span>
-					<input type='checkbox' onChange={() => setEnableZoom(!enableZoom)} /> <label> Enable zoom </label>
-				</span>
-				<span>
-					<input type='checkbox' onChange={() => setMoving(!moving)} /> <label> Enable moving </label>
-				</span>
-				<span>
-					<input type='checkbox' onChange={() => setNodeDrag(!nodeDrag)} /> <label> Enable node drag </label>
-				</span>
-				<br />
-				<button onClick={() => setScope(0)} type='button' > Go back </button>
-			</form>
-		</section>
-	}
 
 	if (scope === 1) return (
 		<>
@@ -102,15 +89,26 @@ function App() {
 						enableZoomInteraction={enableZoom}
 						enablePanInteraction={moving}
 						enableNodeDrag={nodeDrag}
-						height={500}
+						height={700}
 						nodeCanvasObject={showLabels ? setNodesLabels : null}
+						onNodeDragEnd={node => {
+							node.fx = node.x;
+							node.fz = node.z;
+						}}
 					/>
 
-					<Options />
+					<Options controls={{ showLabels, setShowLabels, enableZoom, setEnableZoom, moving, setMoving, nodeDrag, setNodeDrag }} />
+
+					<NodeForm
+						onSubmit={addNode}
+						states={{ showModal, setShowModal, nodeName, setNodeName, nodeValue, setNodeValue, nodeColor, setNodeColor }} />
+
+					<button onClick={() => setShowModal(true)} > Insert new node </button>
+					<br />
+					<button onClick={() => setScope(0)} > Go back </button>
 
 				</header>
 			</div>
-			<ToastContainer />
 		</>
 	)
 
