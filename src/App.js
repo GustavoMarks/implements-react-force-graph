@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
+import { ToastContainer, toast } from "react-toastify";
 import './App.css';
 
 function App() {
@@ -44,46 +45,73 @@ function App() {
 		node.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
 	}
 
-
 	function newRamdomGraph() {
 		setGraphData(randomGraphValue ? genRandomTree(parseInt(randomGraphValue)) : genRandomTree());
 		setScope(1);
 	}
 
-	if (scope === 1) return (
-		<div className="App">
-			<header className="App-header">
-				<ForceGraph2D
-					graphData={graphData}
-					linkWidth={2}
-					enableZoomInteraction={enableZoom}
-					enablePanInteraction={moving}
-					enableNodeDrag={nodeDrag}
-					height='500'
-					nodeCanvasObject={showLabels ? setNodesLabels : null}
-				/>
+	function openNewNodeForm() {
+		toast(<NewNodeForm />, { autoClose: false, closeOnClick: false })
+	}
 
-				<section>
-					<h4> Options: </h4>
-					<form>
-						<span>
-							<input type='checkbox' onChange={() => setShowLabels(!showLabels)} /> <label> Show labels </label>
-						</span>
-						<span>
-							<input type='checkbox' onChange={() => setEnableZoom(!enableZoom)} /> <label> Enable zoom </label>
-						</span>
-						<span>
-							<input type='checkbox' onChange={() => setMoving(!moving)} /> <label> Enable moving </label>
-						</span>
-						<span>
-							<input type='checkbox' onChange={() => setNodeDrag(!nodeDrag)} /> <label> Enable node drag </label>
-						</span>
-						<br />
-						<button onClick={() => setScope(0)} > Go back </button>
-					</form>
-				</section>
-			</header>
-		</div>
+	const NewNodeForm = ({ closeToast }) => {
+		return <section>
+			<h4> New node </h4>
+			<form>
+				<input placeholder='name' type='text' />
+				<input placeholder='value' type='number' />
+				<br />
+				<label>Color:</label> <input placeholder='color' type='color' />
+				<br />
+				<button type='button' > Salve </button>
+				<button onClick={closeToast} type='button'> Cancel </button>
+			</form>
+		</section>
+	}
+
+	const Options = () => {
+		return <section>
+			<h4> Options: </h4>
+			<form>
+				<button onClick={openNewNodeForm} type='button' > New node </button>
+				<span>
+					<input type='checkbox' onChange={() => setShowLabels(!showLabels)} /> <label> Show labels </label>
+				</span>
+				<span>
+					<input type='checkbox' onChange={() => setEnableZoom(!enableZoom)} /> <label> Enable zoom </label>
+				</span>
+				<span>
+					<input type='checkbox' onChange={() => setMoving(!moving)} /> <label> Enable moving </label>
+				</span>
+				<span>
+					<input type='checkbox' onChange={() => setNodeDrag(!nodeDrag)} /> <label> Enable node drag </label>
+				</span>
+				<br />
+				<button onClick={() => setScope(0)} type='button' > Go back </button>
+			</form>
+		</section>
+	}
+
+	if (scope === 1) return (
+		<>
+			<div className="App">
+				<header className="App-header">
+					<ForceGraph2D
+						graphData={graphData}
+						linkWidth={2}
+						enableZoomInteraction={enableZoom}
+						enablePanInteraction={moving}
+						enableNodeDrag={nodeDrag}
+						height={500}
+						nodeCanvasObject={showLabels ? setNodesLabels : null}
+					/>
+
+					<Options />
+
+				</header>
+			</div>
+			<ToastContainer />
+		</>
 	)
 
 	else return (
