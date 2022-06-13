@@ -28,8 +28,8 @@
   font-size: calc(5px + 1vmin);
 	display: flex;
 	flex-direction: column;
-	align-items: stretch;
-  justify-content: space-around;
+	align-items: flex-start;
+  justify-content: center;
 }
 
 .App-link {

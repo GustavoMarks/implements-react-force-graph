@@ -9,10 +9,13 @@ function App() {
 	const [visibileInput, setVisibleInput] = useState(false);
 
 	const [enableZoom, setEnableZoom] = useState(false);
+	const [moving, setMoving] = useState(false);
+	const [nodeDrag, setNodeDrag] = useState(false);
+	const [showLabels, setShowLabels] = useState(false);
 
 	function genRandomTree(N = 10, reverse = false) {
 		return {
-			nodes: [...Array(N).keys()].map(i => ({ id: i })),
+			nodes: [...Array(N).keys()].map(i => ({ id: i, val: 1, name: `node${i}` })),
 			links: [...Array(N).keys()]
 				.filter(id => id)
 				.map(id => ({
@@ -22,6 +25,25 @@ function App() {
 				}))
 		};
 	}
+
+	function setNodesLabels(node, ctx, globalScale) {
+		const label = node.name;
+		const fontSize = 12 / globalScale;
+		ctx.font = `${fontSize}px Sans-Serif`;
+		const textWidth = ctx.measureText(label).width;
+		const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+
+		ctx.fillStyle = '#222222';
+		ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
+
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillStyle = node.color || '#2373AA';
+		ctx.fillText(label, node.x, node.y);
+
+		node.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
+	}
+
 
 	function newRamdomGraph() {
 		setGraphData(randomGraphValue ? genRandomTree(parseInt(randomGraphValue)) : genRandomTree());
@@ -33,16 +55,28 @@ function App() {
 			<header className="App-header">
 				<ForceGraph2D
 					graphData={graphData}
-					linkWidth={3}
+					linkWidth={2}
 					enableZoomInteraction={enableZoom}
-					height='700'
+					enablePanInteraction={moving}
+					enableNodeDrag={nodeDrag}
+					height='500'
+					nodeCanvasObject={showLabels ? setNodesLabels : null}
 				/>
 
 				<section>
 					<h4> Options: </h4>
 					<form>
 						<span>
+							<input type='checkbox' onChange={() => setShowLabels(!showLabels)} /> <label> Show labels </label>
+						</span>
+						<span>
 							<input type='checkbox' onChange={() => setEnableZoom(!enableZoom)} /> <label> Enable zoom </label>
+						</span>
+						<span>
+							<input type='checkbox' onChange={() => setMoving(!moving)} /> <label> Enable moving </label>
+						</span>
+						<span>
+							<input type='checkbox' onChange={() => setNodeDrag(!nodeDrag)} /> <label> Enable node drag </label>
 						</span>
 						<br />
 						<button onClick={() => setScope(0)} > Go back </button>
