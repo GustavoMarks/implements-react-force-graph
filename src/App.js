@@ -274,7 +274,6 @@ function App() {
 						type='number'
 						onChange={(e) => setRandomGraphValue(e.target.value)} />
 				}
-				<button> Upload json </button>
 			</header>
 		</div>
 	);
