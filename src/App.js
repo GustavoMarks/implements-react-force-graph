@@ -25,6 +25,7 @@ function App() {
 
 	const [backupData, setBackupData] = useState({ nodes: [], links: [] });
 	const [isRemoving, setIsRemoving] = useState(false);
+	const [isLinkRemoving, setIsLinkRemoving] = useState(false);
 
 	function genRandomTree(N = 10, reverse = false) {
 		return {
@@ -86,7 +87,7 @@ function App() {
 
 	const activeRemoving = () => {
 		setTicks(1);
-		if (!isRemoving) {
+		if (!isRemoving && !isLinkRemoving) {
 			setIsRemoving(true);
 			const backup = { ...graphData };
 			setBackupData(backup);
@@ -95,9 +96,10 @@ function App() {
 		}
 	}
 
-	const inactiveRemoving = (cancel = false) => {
+	const inactiveRemoving = (cancel) => {
 		if (cancel) setGraphData(backupData);
 		setIsRemoving(false);
+		setIsLinkRemoving(false);
 		toast.dismiss();
 	}
 
@@ -116,6 +118,30 @@ function App() {
 		if (isRemoving) return removeNode(node);
 	}
 
+	const activeLinkRemoving = () => {
+		setTicks(1);
+		if (!isRemoving && !isLinkRemoving) {
+			setIsLinkRemoving(true);
+			const backup = { ...graphData };
+			setBackupData(backup);
+
+			return toast('Select links to remove', { toastId: 'removing-node', autoClose: false, closeButton: false, closeOnClick: false })
+		}
+	}
+
+	const removeLink = (link) => {
+		const updateLinks = graphData.links.filter(item => item !== link);
+
+		const dataToUpdate = { ...graphData };
+		dataToUpdate.links = updateLinks;
+
+		setGraphData(dataToUpdate);
+	}
+
+	const handleLinkClick = (link) => {
+		if (isLinkRemoving) return removeLink(link);
+	}
+
 	if (scope === 1) return (
 		<>
 			<div className="App">
@@ -129,6 +155,7 @@ function App() {
 						height={500}
 						nodeCanvasObject={showLabels ? setNodesLabels : null}
 						onNodeClick={handleNodeClick}
+						onLinkClick={handleLinkClick}
 						cooldownTicks={ticks}
 						onNodeDragEnd={node => {
 							node.fx = node.x;
@@ -153,10 +180,18 @@ function App() {
 					</span>
 					<span>
 						<button onClick={() => setShowModal(true)} > Insert links </button>
-						<button onClick={() => setShowModal(true)} > Remove links </button>
+						{
+							!isLinkRemoving ?
+								<button onClick={activeLinkRemoving} > Remove links </button>
+								: <>
+									<button onClick={() => inactiveRemoving(false)} > Salve changes </button>
+									<button onClick={() => inactiveRemoving(true)} > cancel </button>
+								</>
+						}
+
 					</span>
 					<br />
-					<button onClick={() => setScope(0)} > Go back </button>
+					<button onClick={() => { setScope(0); setTicks(100) }} > Go back </button>
 
 				</header>
 			</div>
@@ -167,7 +202,7 @@ function App() {
 	else return (
 		<div className="App">
 			<header onMouseLeave={() => setVisibleInput(false)} className="App-header">
-				<button onClick={() => setScope(1)} > New empty force graph </button>
+				<button onClick={() => setScope(1)} > Show options </button>
 				<button
 					onClick={newRamdomGraph}
 					onMouseOver={() => setVisibleInput(true)}
