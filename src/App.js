@@ -26,6 +26,8 @@ function App() {
 	const [backupData, setBackupData] = useState({ nodes: [], links: [] });
 	const [isRemoving, setIsRemoving] = useState(false);
 	const [isLinkRemoving, setIsLinkRemoving] = useState(false);
+	const [isLinking, setIsLinking] = useState(false);
+	const [nodeToLink, setNodeToLink] = useState(null);
 
 	function genRandomTree(N = 10, reverse = false) {
 		return {
@@ -45,9 +47,9 @@ function App() {
 		const fontSize = 12 / globalScale;
 		ctx.font = `${fontSize}px Sans-Serif`;
 		const textWidth = ctx.measureText(label).width;
-		const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+		const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
 
-		ctx.fillStyle = '#222222';
+		ctx.fillStyle = node === nodeToLink ? 'red' : '#222222';
 		ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
 
 		ctx.textAlign = 'center';
@@ -55,7 +57,18 @@ function App() {
 		ctx.fillStyle = node.color || '#2373AA';
 		ctx.fillText(label, node.x, node.y);
 
-		node.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
+		node.__bckgDimensions = bckgDimensions;
+	}
+
+	function watchClickedNode(node, ctx) {
+		ctx.beginPath();
+		ctx.arc(node.x, node.y, 3 * node.val * 1.4, 0, 2 * Math.PI, false);
+		if (node === nodeToLink) {
+			ctx.arc(node.x, node.y, 4 * node.val * 1.4, 0, 2 * Math.PI, false);
+			ctx.fillStyle = 'red';
+		}
+		else ctx.fillStyle = node.color || '#2373AA';
+		ctx.fill();
 	}
 
 	function newRamdomGraph() {
@@ -69,8 +82,8 @@ function App() {
 			id: graphData?.nodes?.length,
 			val: nodeValue || 1,
 			name: nodeName, color: nodeColor,
-			fx: 10,
-			fy: 10,
+			fx: 0,
+			fy: 40,
 		};
 		const newGraphData = { ...graphData };
 		const nodesList = [...newGraphData.nodes] || [];
@@ -87,7 +100,7 @@ function App() {
 
 	const activeRemoving = () => {
 		setTicks(1);
-		if (!isRemoving && !isLinkRemoving) {
+		if (!isRemoving && !isLinkRemoving && !isLinking) {
 			setIsRemoving(true);
 			const backup = { ...graphData };
 			setBackupData(backup);
@@ -97,9 +110,13 @@ function App() {
 	}
 
 	const inactiveRemoving = (cancel) => {
+		console.log(cancel)
+		console.log(backupData);
 		if (cancel) setGraphData(backupData);
 		setIsRemoving(false);
 		setIsLinkRemoving(false);
+		setIsLinking(false);
+		setNodeToLink(null)
 		toast.dismiss();
 	}
 
@@ -116,11 +133,29 @@ function App() {
 
 	const handleNodeClick = (node) => {
 		if (isRemoving) return removeNode(node);
+		if (isLinking && !nodeToLink) {
+			setNodeToLink(node);
+			toast.dismiss('removing-node');
+			toast.update('removing-node', { render: 'Select targets' });
+			return toast('Select targets', { toastId: 'select-targets', autoClose: false, closeButton: false, closeOnClick: false })
+		}
+
+		else if (nodeToLink) {
+			const newLink = { source: nodeToLink, target: node, color: '#888888' };
+			const updateData = { ...graphData };
+			if (!updateData.links.find(item => item === newLink)) {
+				const updateLinks = [...updateData.links, newLink];
+				const updateNode = [...updateData.nodes];
+				updateData.links = updateLinks;
+				updateData.nodes = updateNode;
+				setGraphData(updateData);
+			}
+		}
 	}
 
 	const activeLinkRemoving = () => {
 		setTicks(1);
-		if (!isRemoving && !isLinkRemoving) {
+		if (!isRemoving && !isLinkRemoving && !isLinking) {
 			setIsLinkRemoving(true);
 			const backup = { ...graphData };
 			setBackupData(backup);
@@ -138,6 +173,17 @@ function App() {
 		setGraphData(dataToUpdate);
 	}
 
+	const activeLinking = () => {
+		setTicks(1);
+		if (!isRemoving && !isLinkRemoving && !isLinking) {
+			setIsLinking(true);
+			const backup = { ...graphData };
+			setBackupData(backup);
+
+			return toast('Select source node', { toastId: 'removing-node', autoClose: false, closeButton: false, closeOnClick: false })
+		}
+	}
+
 	const handleLinkClick = (link) => {
 		if (isLinkRemoving) return removeLink(link);
 	}
@@ -153,7 +199,8 @@ function App() {
 						enablePanInteraction={moving}
 						enableNodeDrag={nodeDrag}
 						height={500}
-						nodeCanvasObject={showLabels ? setNodesLabels : null}
+						nodeCanvasObject={showLabels ? setNodesLabels : watchClickedNode}
+						nodeCanvasObjectMode={node => node === nodeToLink && !showLabels ? 'before' : showLabels ? 'replace' : undefined}
 						onNodeClick={handleNodeClick}
 						onLinkClick={handleLinkClick}
 						cooldownTicks={ticks}
@@ -168,23 +215,32 @@ function App() {
 					<NodeForm
 						onSubmit={addNode}
 						states={{ showModal, setShowModal, nodeName, setNodeName, nodeValue, setNodeValue, nodeColor, setNodeColor }} />
+
 					<span>
 						<button onClick={() => setShowModal(true)} > Insert new node </button>
 						{
 							!isRemoving ?
 								<button onClick={activeRemoving} > Remove node </button>
-								: <> <button onClick={() => inactiveRemoving(false)} > Salve changes </button>
+								: <> <button onClick={() => inactiveRemoving(false)} > Save changes </button>
 									<button onClick={() => inactiveRemoving(true)} > cancel </button>
 								</>
 						}
 					</span>
 					<span>
-						<button onClick={() => setShowModal(true)} > Insert links </button>
+
+						{
+							!isLinking ?
+								<button onClick={activeLinking} > Insert links on node </button>
+								: <>
+									<button onClick={() => inactiveRemoving(false)} > Save changes </button>
+									<button onClick={() => inactiveRemoving(true)} > cancel </button>
+								</>
+						}
 						{
 							!isLinkRemoving ?
 								<button onClick={activeLinkRemoving} > Remove links </button>
 								: <>
-									<button onClick={() => inactiveRemoving(false)} > Salve changes </button>
+									<button onClick={() => inactiveRemoving(false)} > Save changes </button>
 									<button onClick={() => inactiveRemoving(true)} > cancel </button>
 								</>
 						}
@@ -214,7 +270,7 @@ function App() {
 					<input
 						value={randomGraphValue}
 						onMouseOver={() => setVisibleInput(true)}
-						placeholder='Node number'
+						placeholder='nodes number'
 						type='number'
 						onChange={(e) => setRandomGraphValue(e.target.value)} />
 				}
