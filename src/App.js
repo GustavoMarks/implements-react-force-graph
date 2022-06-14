@@ -110,8 +110,6 @@ function App() {
 	}
 
 	const inactiveRemoving = (cancel) => {
-		console.log(cancel)
-		console.log(backupData);
 		if (cancel) setGraphData(backupData);
 		setIsRemoving(false);
 		setIsLinkRemoving(false);
