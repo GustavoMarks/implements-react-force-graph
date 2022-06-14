@@ -256,6 +256,7 @@ function App() {
 	else return (
 		<div className="App">
 			<header onMouseLeave={() => setVisibleInput(false)} className="App-header">
+				<h3> react-force-graph tests </h3>
 				<button onClick={() => setScope(1)} > Show options </button>
 				<button
 					onClick={newRamdomGraph}
@@ -268,6 +269,7 @@ function App() {
 					<input
 						value={randomGraphValue}
 						onMouseOver={() => setVisibleInput(true)}
+						onBlur={() => setVisibleInput(false)}
 						placeholder='nodes number'
 						type='number'
 						onChange={(e) => setRandomGraphValue(e.target.value)} />
