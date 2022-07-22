@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify'
 import ForceGraph2D from 'react-force-graph-2d';
-import Options from './ForceGraphOptions';
-import NodeForm from './NodeForm';
+import Options from './components/ForceGraphOptions';
+import NodeForm from './components/NodeForm';
+import AsideMenu from './components/AsideMenu';
 import './App.css';
 
 function App() {
@@ -45,7 +46,7 @@ function App() {
 
 	function setNodesLabels(node, ctx, globalScale) {
 		const label = node.name;
-		const fontSize = 12 / globalScale;
+		const fontSize = 16 / globalScale;
 		ctx.font = `${fontSize}px Sans-Serif`;
 		const textWidth = ctx.measureText(label).width;
 		const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
@@ -61,7 +62,7 @@ function App() {
 		node.__bckgDimensions = bckgDimensions;
 	}
 
-	function setLinksLabels(link, ctx, globalScale){
+	function setLinksLabels(link, ctx, globalScale) {
 		const start = link.source;
 		const end = link.target;
 
@@ -77,7 +78,7 @@ function App() {
 
 		// estimate fontSize to fit in link length
 		ctx.font = '1px Sans-Serif';
-		const fontSize = 12 / globalScale;
+		const fontSize = 16 / globalScale;
 		ctx.font = `${fontSize}px Sans-Serif`;
 		const textWidth = ctx.measureText(label).width;
 		const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
@@ -232,7 +233,7 @@ function App() {
 						enableZoomInteraction={enableZoom}
 						enablePanInteraction={moving}
 						enableNodeDrag={nodeDrag}
-						height={500}
+						height={900}
 						nodeCanvasObject={showLabels ? setNodesLabels : watchClickedNode}
 						nodeCanvasObjectMode={() => 'after'}
 						onNodeClick={handleNodeClick}
@@ -245,48 +246,50 @@ function App() {
 						linkCanvasObject={setLinksLabels}
 						linkCanvasObjectMode={() => 'after'}
 						linkDirectionalArrowLength={5}
-        		linkDirectionalArrowRelPos={1}
+						linkDirectionalArrowRelPos={1}
+						minZoom={4}
 					/>
 
-					<Options controls={{ showLabels, setShowLabels, enableZoom, setEnableZoom, moving, setMoving, nodeDrag, setNodeDrag }} />
+					<AsideMenu>
+						<Options controls={{ showLabels, setShowLabels, enableZoom, setEnableZoom, moving, setMoving, nodeDrag, setNodeDrag }} />
 
-					<NodeForm
-						onSubmit={addNode}
-						states={{ showModal, setShowModal, nodeName, setNodeName, nodeValue, setNodeValue, nodeColor, setNodeColor }} />
+						<NodeForm
+							onSubmit={addNode}
+							states={{ showModal, setShowModal, nodeName, setNodeName, nodeValue, setNodeValue, nodeColor, setNodeColor }} />
 
-					<span>
-						<button onClick={() => setShowModal(true)} > Insert new node </button>
-						{
-							!isRemoving ?
-								<button onClick={activeRemoving} > Remove node </button>
-								: <> <button onClick={() => inactiveRemoving(false)} > Save changes </button>
-									<button onClick={() => inactiveRemoving(true)} > cancel </button>
-								</>
-						}
-					</span>
-					<span>
+						<span>
+							<button onClick={() => setShowModal(true)} > Insert new node </button>
+							{
+								!isRemoving ?
+									<button onClick={activeRemoving} > Remove node </button>
+									: <> <button onClick={() => inactiveRemoving(false)} > Save changes </button>
+										<button onClick={() => inactiveRemoving(true)} > cancel </button>
+									</>
+							}
+						</span>
+						<span id="action-btns" >
 
-						{
-							!isLinking ?
-								<button onClick={activeLinking} > Insert links on node </button>
-								: <>
-									<button onClick={() => inactiveRemoving(false)} > Save changes </button>
-									<button onClick={() => inactiveRemoving(true)} > cancel </button>
-								</>
-						}
-						{
-							!isLinkRemoving ?
-								<button onClick={activeLinkRemoving} > Remove links </button>
-								: <>
-									<button onClick={() => inactiveRemoving(false)} > Save changes </button>
-									<button onClick={() => inactiveRemoving(true)} > cancel </button>
-								</>
-						}
+							{
+								!isLinking ?
+									<button onClick={activeLinking} > Insert links on node </button>
+									: <>
+										<button onClick={() => inactiveRemoving(false)} > Save changes </button>
+										<button onClick={() => inactiveRemoving(true)} > cancel </button>
+									</>
+							}
+							{
+								!isLinkRemoving ?
+									<button onClick={activeLinkRemoving} > Remove links </button>
+									: <>
+										<button onClick={() => inactiveRemoving(false)} > Save changes </button>
+										<button onClick={() => inactiveRemoving(true)} > cancel </button>
+									</>
+							}
 
-					</span>
-					<br />
-					<button onClick={() => { setScope(0); setTicks(100) }} > Go back </button>
-
+						</span>
+						<br />
+						<button onClick={() => { setScope(0); setTicks(100) }} > Go back </button>
+					</AsideMenu>
 				</header>
 			</div>
 			<ToastContainer />
