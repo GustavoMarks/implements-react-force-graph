@@ -37,7 +37,8 @@ function App() {
 				.map(id => ({
 					[reverse ? 'target' : 'source']: id,
 					[reverse ? 'source' : 'target']: Math.round(Math.random() * (id - 1)),
-					color: '#888888'
+					color: '#888888',
+					name: `link${id}`
 				}))
 		};
 	}
@@ -58,6 +59,41 @@ function App() {
 		ctx.fillText(label, node.x, node.y);
 
 		node.__bckgDimensions = bckgDimensions;
+	}
+
+	function setLinksLabels(link, ctx, globalScale){
+		const start = link.source;
+		const end = link.target;
+
+		// ignore unbound links
+		if (typeof start !== 'object' || typeof end !== 'object') return;
+
+		// calculate label positioning
+		const textPos = Object.assign(...['x', 'y'].map(c => ({
+			[c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
+		})));
+
+		const label = link.name || ''
+
+		// estimate fontSize to fit in link length
+		ctx.font = '1px Sans-Serif';
+		const fontSize = 12 / globalScale;
+		ctx.font = `${fontSize}px Sans-Serif`;
+		const textWidth = ctx.measureText(label).width;
+		const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+
+		// draw text label (with background rect)
+		ctx.save();
+		ctx.translate(textPos.x, textPos.y);
+
+		ctx.fillStyle = 'transparent';
+		ctx.fillRect(- bckgDimensions[0] / 2, - bckgDimensions[1] / 2, ...bckgDimensions);
+
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillStyle = 'white';
+		ctx.fillText(label, 0, 0);
+		ctx.restore();
 	}
 
 	function watchClickedNode(node, ctx) {
@@ -198,7 +234,7 @@ function App() {
 						enableNodeDrag={nodeDrag}
 						height={500}
 						nodeCanvasObject={showLabels ? setNodesLabels : watchClickedNode}
-						nodeCanvasObjectMode={node => node === nodeToLink && !showLabels ? 'before' : showLabels ? 'replace' : undefined}
+						nodeCanvasObjectMode={() => 'after'}
 						onNodeClick={handleNodeClick}
 						onLinkClick={handleLinkClick}
 						cooldownTicks={ticks}
@@ -206,6 +242,10 @@ function App() {
 							node.fx = node.x;
 							node.fz = node.z;
 						}}
+						linkCanvasObject={setLinksLabels}
+						linkCanvasObjectMode={() => 'after'}
+						linkDirectionalArrowLength={5}
+        		linkDirectionalArrowRelPos={1}
 					/>
 
 					<Options controls={{ showLabels, setShowLabels, enableZoom, setEnableZoom, moving, setMoving, nodeDrag, setNodeDrag }} />
