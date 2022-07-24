@@ -14,8 +14,10 @@ function App() {
 
 	const [enableZoom, setEnableZoom] = useState(false);
 	const [moving, setMoving] = useState(false);
-	const [nodeDrag, setNodeDrag] = useState(false);
-	const [showLabels, setShowLabels] = useState(false);
+	const [nodeDrag, setNodeDrag] = useState(true);
+	const [showLabels, setShowLabels] = useState(true);
+	const [linkLabels, setLinkLabel] = useState(true);
+	const [directed, setDirected] = useState(true);
 	const [ticks, setTicks] = useState(100);
 
 	const [showModal, setShowModal] = useState(false);
@@ -63,6 +65,7 @@ function App() {
 	}
 
 	function setLinksLabels(link, ctx, globalScale) {
+		if (!linkLabels) return
 		const start = link.source;
 		const end = link.target;
 
@@ -245,13 +248,26 @@ function App() {
 						}}
 						linkCanvasObject={setLinksLabels}
 						linkCanvasObjectMode={() => 'after'}
-						linkDirectionalArrowLength={5}
-						linkDirectionalArrowRelPos={1}
+						linkDirectionalArrowLength={directed ? 5 : undefined}
+						linkDirectionalArrowRelPos={directed ? 2 : undefined}
 						minZoom={4}
 					/>
 
 					<AsideMenu>
-						<Options controls={{ showLabels, setShowLabels, enableZoom, setEnableZoom, moving, setMoving, nodeDrag, setNodeDrag }} />
+						<Options controls={{
+							showLabels,
+							setShowLabels,
+							enableZoom,
+							setEnableZoom,
+							moving,
+							setMoving,
+							nodeDrag,
+							setNodeDrag,
+							linkLabels,
+							setLinkLabel,
+							directed,
+							setDirected,
+						}} />
 
 						<NodeForm
 							onSubmit={addNode}
