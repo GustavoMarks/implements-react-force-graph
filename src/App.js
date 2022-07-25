@@ -115,6 +115,7 @@ function App() {
 
 	function newRamdomGraph() {
 		setGraphData(randomGraphValue ? genRandomTree(parseInt(randomGraphValue)) : genRandomTree());
+		setBackupData({ nodes: [], links: [] });
 		setScope(1);
 	}
 
@@ -168,6 +169,61 @@ function App() {
 		dataToUpdate.links = updateLinks;
 
 		setGraphData(dataToUpdate);
+	}
+
+	const downloadFile = () => {
+		// create file in browser
+		const fileName = "graph";
+		const json = JSON.stringify(graphData, null, 2);
+		const blob = new Blob([json], { type: "application/json" });
+		const href = URL.createObjectURL(blob);
+
+		// create "a" HTLM element with href to file
+		const link = document.createElement("a");
+		link.href = href;
+		link.download = fileName + ".json";
+		document.body.appendChild(link);
+		link.click();
+
+		// clean up "a" element & remove ObjectURL
+		document.body.removeChild(link);
+		URL.revokeObjectURL(href);
+	};
+
+	function handleAddFile(e) {
+		e?.stopPropagation();
+		e?.preventDefault();
+		const fileReader = new FileReader();
+		fileReader.onload = event => {
+			const jsonObjt = JSON.parse(event.target.result);
+			console.log(jsonObjt)
+			let newNodes = [];
+			jsonObjt.nodes?.forEach((node, index) => {
+				newNodes.push({
+					id: index,
+					val: node.val || 1,
+					name: node.name,
+					color: node.color,
+				})
+			});
+
+			let newLinks = [];
+			jsonObjt.links?.forEach(link => {
+				newLinks.push({
+					source: link.source.id, target: link.target.id, color: link.color, name: link.name
+				})
+			})
+			setGraphData({ nodes: newNodes, links: newLinks });
+			setBackupData({ nodes: [], links: [] });
+			setScope(1);
+		}
+		fileReader.onerror = error => {
+			console.log(error);
+			alert("Error to read file");
+		}
+		fileReader.readAsText(e.target.files?.item(0))
+
+		e.target.value = null;
 	}
 
 	const handleNodeClick = (node) => {
@@ -291,6 +347,7 @@ function App() {
 						}} />
 
 						<button onClick={() => { setScope(0); setTicks(100) }} > Go back </button>
+						<button type="button" onClick={downloadFile}> Download JSON file </button>
 					</AsideMenu>
 				</header>
 			</div>
@@ -319,6 +376,15 @@ function App() {
 						type='number'
 						onChange={(e) => setRandomGraphValue(e.target.value)} />
 				}
+
+				<label className='button-like' htmlFor='json-input'>
+					Upload JSON file
+				</label>
+				<input
+					id="json-input" type="file" accept={'application/json'}
+					onChange={handleAddFile}
+					style={{ display: "none" }}
+				/>
 			</header>
 		</div>
 	);
