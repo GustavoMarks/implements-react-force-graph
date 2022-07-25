@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify'
 import ForceGraph2D from 'react-force-graph-2d';
 import Options from './components/ForceGraphOptions';
-import NodeForm from './components/NodeForm';
+import DataOptions from './components/GraphDataOptions';
 import AsideMenu from './components/AsideMenu';
 import './App.css';
 
@@ -20,17 +20,17 @@ function App() {
 	const [directed, setDirected] = useState(true);
 	const [ticks, setTicks] = useState(100);
 
-	const [showModal, setShowModal] = useState(false);
-
 	const [nodeName, setNodeName] = useState('');
 	const [nodeValue, setNodeValue] = useState('');
-	const [nodeColor, setNodeColor] = useState('');
+	const [nodeColor, setNodeColor] = useState('#2373AA');
 
 	const [backupData, setBackupData] = useState({ nodes: [], links: [] });
 	const [isRemoving, setIsRemoving] = useState(false);
 	const [isLinkRemoving, setIsLinkRemoving] = useState(false);
 	const [isLinking, setIsLinking] = useState(false);
 	const [nodeToLink, setNodeToLink] = useState(null);
+	const [linkName, setLinkName] = useState('');
+	const [linkColor, setLinkColor] = useState('#888888');
 
 	function genRandomTree(N = 10, reverse = false) {
 		return {
@@ -47,11 +47,12 @@ function App() {
 	}
 
 	function setNodesLabels(node, ctx, globalScale) {
-		const label = node.name;
-		const fontSize = 16 / globalScale;
+		const label1 = `name: ${node.name}`
+		const label2 = `id: ${node.id}`
+		const fontSize = 13 / globalScale;
 		ctx.font = `${fontSize}px Sans-Serif`;
-		const textWidth = ctx.measureText(label).width;
-		const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
+		const textWidth = ctx.measureText(label1).width;
+		const bckgDimensions = [textWidth, fontSize * 2].map(n => n + fontSize * 0.2);
 
 		ctx.fillStyle = node === nodeToLink ? 'red' : '#222222';
 		ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
@@ -59,7 +60,8 @@ function App() {
 		ctx.textAlign = 'center';
 		ctx.textBaseline = 'middle';
 		ctx.fillStyle = node.color || '#2373AA';
-		ctx.fillText(label, node.x, node.y);
+		ctx.fillText(label1, node.x, node.y - 2);
+		ctx.fillText(label2, node.x, node.y + 2);
 
 		node.__bckgDimensions = bckgDimensions;
 	}
@@ -81,7 +83,7 @@ function App() {
 
 		// estimate fontSize to fit in link length
 		ctx.font = '1px Sans-Serif';
-		const fontSize = 16 / globalScale;
+		const fontSize = 13 / globalScale;
 		ctx.font = `${fontSize}px Sans-Serif`;
 		const textWidth = ctx.measureText(label).width;
 		const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
@@ -133,9 +135,8 @@ function App() {
 		setGraphData(newGraphData);
 		setNodeName('');
 		setNodeValue('');
-		setNodeColor('');
+		setNodeColor('#2373AA');
 
-		setShowModal(false);
 	}
 
 	const activeRemoving = () => {
@@ -174,12 +175,17 @@ function App() {
 		if (isLinking && !nodeToLink) {
 			setNodeToLink(node);
 			toast.dismiss('removing-node');
-			toast.update('removing-node', { render: 'Select targets' });
 			return toast('Select targets', { toastId: 'select-targets', autoClose: false, closeButton: false, closeOnClick: false })
 		}
 
 		else if (nodeToLink) {
-			const newLink = { source: nodeToLink, target: node, color: '#888888' };
+			if (node === nodeToLink) {
+				setNodeToLink(null);
+				toast.dismiss('select-targets');
+				return toast('Select source node', { toastId: 'removing-node', autoClose: false, closeButton: false, closeOnClick: false })
+			}
+
+			const newLink = { source: nodeToLink, target: node, color: linkColor, name: linkName };
 			const updateData = { ...graphData };
 			if (!updateData.links.find(item => item === newLink)) {
 				const updateLinks = [...updateData.links, newLink];
@@ -238,7 +244,13 @@ function App() {
 						enableNodeDrag={nodeDrag}
 						height={900}
 						nodeCanvasObject={showLabels ? setNodesLabels : watchClickedNode}
-						nodeCanvasObjectMode={() => 'after'}
+						nodeCanvasObjectMode={(node) =>
+							node === nodeToLink && !showLabels
+								? "before"
+								: showLabels
+									? "after"
+									: undefined
+						}
 						onNodeClick={handleNodeClick}
 						onLinkClick={handleLinkClick}
 						cooldownTicks={ticks}
@@ -269,41 +281,15 @@ function App() {
 							setDirected,
 						}} />
 
-						<NodeForm
-							onSubmit={addNode}
-							states={{ showModal, setShowModal, nodeName, setNodeName, nodeValue, setNodeValue, nodeColor, setNodeColor }} />
+						<DataOptions controls={{
+							activeRemoving,
+							inactiveRemoving,
+							activeLinkRemoving,
+							activeLinking,
+							nodeName, setNodeName, nodeValue, setNodeValue, nodeColor, setNodeColor, addNode,
+							nodeToLink, linkName, setLinkName, linkColor, setLinkColor,
+						}} />
 
-						<span>
-							<button onClick={() => setShowModal(true)} > Insert new node </button>
-							{
-								!isRemoving ?
-									<button onClick={activeRemoving} > Remove node </button>
-									: <> <button onClick={() => inactiveRemoving(false)} > Save changes </button>
-										<button onClick={() => inactiveRemoving(true)} > cancel </button>
-									</>
-							}
-						</span>
-						<span id="action-btns" >
-
-							{
-								!isLinking ?
-									<button onClick={activeLinking} > Insert links on node </button>
-									: <>
-										<button onClick={() => inactiveRemoving(false)} > Save changes </button>
-										<button onClick={() => inactiveRemoving(true)} > cancel </button>
-									</>
-							}
-							{
-								!isLinkRemoving ?
-									<button onClick={activeLinkRemoving} > Remove links </button>
-									: <>
-										<button onClick={() => inactiveRemoving(false)} > Save changes </button>
-										<button onClick={() => inactiveRemoving(true)} > cancel </button>
-									</>
-							}
-
-						</span>
-						<br />
 						<button onClick={() => { setScope(0); setTicks(100) }} > Go back </button>
 					</AsideMenu>
 				</header>

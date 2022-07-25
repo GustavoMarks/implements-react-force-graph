@@ -17,7 +17,7 @@ const ForceGraphOptions = ({ controls }) => {
 		setDirected } = controls;
 
 	return <form>
-		<h4> Options: </h4>
+		<h4> Layout options: </h4>
 		<label class="container"> Directed graph
 			<input type='checkbox' onChange={() => setDirected(!directed)} checked={directed} />
 			<span class="checkmark"></span>
